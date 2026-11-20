@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { Avatar } from "@/components/avatar";
 import { Comments } from "@/components/comments";
 import { Page, PageHeader } from "@/components/page-layout";
 import { PostActions } from "@/components/post-actions";
+import { CommentsSkeleton } from "@/components/skeleton";
 import { TagChips } from "@/components/tag-chips";
 import { apiGet, getSession } from "@/lib/api.server";
-import type { Comment, Post } from "@/lib/types";
+import type { Comment, Post, Session } from "@/lib/types";
 import { formatDate } from "@/lib/utils";
 
 type PostPageProps = {
@@ -30,7 +32,6 @@ export async function generateMetadata({ params }: PostPageProps): Promise<Metad
 
 export default async function PostPage({ params }: PostPageProps) {
   const [post, session] = await Promise.all([getPost(params), getSession()]);
-  const comments = await apiGet<Comment[]>(`/posts/${post.id}/comments`);
   const blogPath = `/${post.author.username}`;
 
   return (
@@ -93,12 +94,26 @@ export default async function PostPage({ params }: PostPageProps) {
           />
         </div>
       </article>
-      <Comments
-        postId={post.id}
-        comments={comments}
-        viewerUsername={session?.user.username ?? null}
-        postAuthorUsername={post.author.username}
-      />
+      <Suspense fallback={<CommentsSkeleton />}>
+        <PostComments
+          post={post}
+          session={session}
+        />
+      </Suspense>
     </Page>
+  );
+}
+
+// Streamed separately so the article renders without waiting on the comments request.
+async function PostComments({ post, session }: { post: Post; session: Session | null }) {
+  const comments = await apiGet<Comment[]>(`/posts/${post.id}/comments`);
+
+  return (
+    <Comments
+      postId={post.id}
+      comments={comments}
+      viewer={session ? { name: session.user.name, username: session.user.username, image: session.user.image } : null}
+      postAuthorUsername={post.author.username}
+    />
   );
 }

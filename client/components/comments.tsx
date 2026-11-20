@@ -3,44 +3,73 @@
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useOptimistic } from "react";
 import { Avatar } from "@/components/avatar";
 import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { FormMessage } from "@/components/ui/field";
 import { apiSend } from "@/lib/api.client";
-import type { Comment } from "@/lib/types";
+import type { AuthorRef, Comment } from "@/lib/types";
 import { readText, useFormSubmit } from "@/lib/use-form-submit";
 import { formatDate } from "@/lib/utils";
 
 type CommentsProps = {
   postId: string;
   comments: Comment[];
-  viewerUsername: string | null;
+  viewer: AuthorRef | null;
   postAuthorUsername: string;
 };
 
-export function Comments({ postId, comments, viewerUsername, postAuthorUsername }: CommentsProps) {
+type CommentChange = { type: "add"; comment: Comment } | { type: "remove"; id: string };
+
+function applyChange(comments: Comment[], change: CommentChange) {
+  return change.type === "add"
+    ? [...comments, change.comment]
+    : comments.filter((comment) => comment.id !== change.id);
+}
+
+export function Comments({ postId, comments, viewer, postAuthorUsername }: CommentsProps) {
   const router = useRouter();
+  const [visibleComments, changeComments] = useOptimistic(comments, applyChange);
+  const viewerUsername = viewer?.username ?? null;
+
+  // The new comment shows up immediately; the refresh then swaps in the server copy.
   const { pending, error, onSubmit } = useFormSubmit(async (form, element) => {
-    await apiSend("POST", `/posts/${postId}/comments`, { content: readText(form, "content") });
+    const content = readText(form, "content").trim();
+    if (!viewer || !content) return;
+
+    changeComments({
+      type: "add",
+      comment: { id: `pending-${Date.now()}`, content, createdAt: new Date().toISOString(), author: viewer },
+    });
     element.reset();
+    try {
+      await apiSend("POST", `/posts/${postId}/comments`, { content });
+    } catch (cause) {
+      const field = element.elements.namedItem("content");
+      if (field instanceof HTMLTextAreaElement) field.value = content;
+      throw cause;
+    }
     router.refresh();
   });
 
+  // Runs inside ConfirmButton's transition, so the optimistic removal holds until the refresh lands.
   async function removeComment(id: string) {
+    changeComments({ type: "remove", id });
     await apiSend("DELETE", `/comments/${id}`);
     router.refresh();
   }
 
   const canRemove = (comment: Comment) =>
-    viewerUsername === comment.author.username || viewerUsername === postAuthorUsername;
+    !comment.id.startsWith("pending-") &&
+    (viewerUsername === comment.author.username || viewerUsername === postAuthorUsername);
 
   return (
     <section
       id='comments'
       className='mt-16 scroll-mt-24'>
       <h2 className='border-b pb-3 text-[15px] font-medium'>
-        Comments <span className='text-muted-foreground'>{comments.length}</span>
+        Comments <span className='text-muted-foreground'>{visibleComments.length}</span>
       </h2>
       {viewerUsername ? (
         <form
@@ -75,7 +104,7 @@ export function Comments({ postId, comments, viewerUsername, postAuthorUsername 
       )}
       <ul className='mt-4 divide-y'>
         <AnimatePresence initial={false}>
-          {comments.map((comment) => (
+          {visibleComments.map((comment) => (
             <motion.li
               key={comment.id}
               layout
