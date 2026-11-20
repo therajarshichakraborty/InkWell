@@ -19,6 +19,10 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   trustedOrigins: [env.APP_URL],
   database: drizzleAdapter(db, { provider: "pg", schema }),
+  session: {
+    // Every page render and API call resolves the session; a signed cookie skips the DB lookup.
+    cookieCache: { enabled: true, maxAge: 5 * 60 },
+  },
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,
