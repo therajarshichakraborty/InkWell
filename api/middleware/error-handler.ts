@@ -17,7 +17,7 @@ function toHttpError(error: unknown) {
   if (error instanceof HttpError) return error;
   if (error instanceof MulterError) {
     return error.code === "LIMIT_FILE_SIZE"
-      ? HttpError.payloadTooLarge("Images must be 5 MB or smaller")
+      ? HttpError.payloadTooLarge("Images must be 4 MB or smaller")
       : HttpError.badRequest("Upload a single image");
   }
   if (isUniqueViolation(error)) return HttpError.conflict("That already exists, try again");
