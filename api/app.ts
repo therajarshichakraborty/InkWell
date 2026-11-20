@@ -27,3 +27,8 @@ export function createApp() {
 
   return app;
 }
+
+// Vercel detects this file as the Express entry point and serves the default export.
+const app = createApp();
+
+export default app;
