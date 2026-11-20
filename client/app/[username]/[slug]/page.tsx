@@ -76,7 +76,7 @@ export default async function PostPage({ params }: PostPageProps) {
           <span>{post.readingTime} min read</span>
         </div>
         <div
-          className='prose mt-10 max-w-none text-[15.5px] leading-[1.75] text-foreground prose-neutral dark:prose-invert prose-headings:font-semibold prose-headings:tracking-tight prose-a:underline-offset-4 prose-code:before:content-none prose-code:after:content-none prose-pre:rounded-lg prose-pre:border prose-pre:bg-muted prose-pre:text-foreground prose-img:rounded-lg'
+          className='prose mt-10 max-w-none text-[15.5px] leading-[1.75] text-foreground prose-neutral dark:prose-invert prose-headings:font-semibold prose-headings:tracking-tight prose-a:underline-offset-4 prose-code:before:content-none prose-code:after:content-none prose-pre:rounded-lg prose-img:rounded-lg'
           dangerouslySetInnerHTML={{ __html: post.html }}
         />
         <TagChips
