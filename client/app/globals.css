@@ -66,25 +66,72 @@
 }
 
 /*
- * Code blocks in post bodies use GitHub Dark in both themes (token classes come from highlight.js on the API).
- * Kept unlayered so it wins over the typography plugin's pre styles.
+ * Code in post bodies follows GitHub's own themes: GitHub Light in light mode, GitHub Dark in dark mode.
+ * Token classes come from highlight.js on the API. Kept unlayered so it wins over the typography plugin.
  */
 :root {
-  --code-bg: #0d1117;
-  --code-fg: #e6edf3;
-  --code-border: #30363d;
+  --code-bg: #f6f8fa;
+  --code-fg: #1f2328;
+  --code-border: #d1d9e0;
+  --code-inline-bg: rgba(129, 139, 152, 0.12);
+  --code-keyword: #cf222e;
+  --code-title: #8250df;
+  --code-constant: #0550ae;
+  --code-string: #0a3069;
+  --code-builtin: #953800;
+  --code-comment: #59636e;
+  --code-tag: #116329;
+  --code-section: #0550ae;
+  --code-bullet: #3b2300;
+  --code-addition: #116329;
+  --code-addition-bg: #dafbe1;
+  --code-deletion: #82071e;
+  --code-deletion-bg: #ffebe9;
+}
+
+.dark {
+  --code-bg: #151b23;
+  --code-fg: #f0f6fc;
+  --code-border: #3d444d;
+  --code-inline-bg: rgba(101, 108, 118, 0.2);
+  --code-keyword: #ff7b72;
+  --code-title: #d2a8ff;
+  --code-constant: #79c0ff;
+  --code-string: #a5d6ff;
+  --code-builtin: #ffa657;
+  --code-comment: #9198a1;
+  --code-tag: #7ee787;
+  --code-section: #1f6feb;
+  --code-bullet: #f2cc60;
+  --code-addition: #aff5b4;
+  --code-addition-bg: #033a16;
+  --code-deletion: #ffdcd7;
+  --code-deletion-bg: #67060c;
 }
 
 .prose pre {
   background-color: var(--code-bg);
   color: var(--code-fg);
   border: 1px solid var(--code-border);
-  color-scheme: dark;
+  border-radius: 0.5rem;
+  font-size: 0.85em;
+  line-height: 1.6;
 }
 
 .prose pre code {
   background: transparent;
   color: inherit;
+  padding: 0;
+  font-size: inherit;
+}
+
+.prose :not(pre) > code {
+  background-color: var(--code-inline-bg);
+  color: inherit;
+  border-radius: 6px;
+  padding: 0.2em 0.4em;
+  font-size: 0.85em;
+  font-weight: 400;
 }
 
 .hljs-doctag,
@@ -94,13 +141,13 @@
 .hljs-template-variable,
 .hljs-type,
 .hljs-variable.language_ {
-  color: #ff7b72;
+  color: var(--code-keyword);
 }
 .hljs-title,
 .hljs-title.class_,
 .hljs-title.class_.inherited__,
 .hljs-title.function_ {
-  color: #d2a8ff;
+  color: var(--code-title);
 }
 .hljs-attr,
 .hljs-attribute,
@@ -112,37 +159,37 @@
 .hljs-selector-class,
 .hljs-selector-id,
 .hljs-variable {
-  color: #79c0ff;
+  color: var(--code-constant);
 }
 .hljs-meta .hljs-string,
 .hljs-regexp,
 .hljs-string {
-  color: #a5d6ff;
+  color: var(--code-string);
 }
 .hljs-built_in,
 .hljs-symbol {
-  color: #ffa657;
+  color: var(--code-builtin);
 }
 .hljs-code,
 .hljs-comment,
 .hljs-formula {
-  color: #8b949e;
+  color: var(--code-comment);
 }
 .hljs-name,
 .hljs-quote,
 .hljs-selector-pseudo,
 .hljs-selector-tag {
-  color: #7ee787;
+  color: var(--code-tag);
 }
 .hljs-subst {
   color: var(--code-fg);
 }
 .hljs-section {
-  color: #1f6feb;
+  color: var(--code-section);
   font-weight: 700;
 }
 .hljs-bullet {
-  color: #f2cc60;
+  color: var(--code-bullet);
 }
 .hljs-emphasis {
   font-style: italic;
@@ -151,10 +198,10 @@
   font-weight: 700;
 }
 .hljs-addition {
-  color: #aff5b4;
-  background-color: #033a16;
+  color: var(--code-addition);
+  background-color: var(--code-addition-bg);
 }
 .hljs-deletion {
-  color: #ffdcd7;
-  background-color: #67060c;
+  color: var(--code-deletion);
+  background-color: var(--code-deletion-bg);
 }
