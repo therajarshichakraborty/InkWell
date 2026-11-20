@@ -1,7 +1,7 @@
 {
   "name": "blog-app",
   "private": true,
-  "name":"Rajarshi Chakraborty",
+  "author":"Rajarshi Chakraborty",
   "scripts": {
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
