@@ -1,9 +1,9 @@
 "use client";
 
-import { X } from "lucide-react";
+import { Code, Heading2, Heading3, SquareCode, X } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { ConfirmButton } from "@/components/ui/confirm-button";
 import { FormMessage } from "@/components/ui/field";
@@ -51,12 +51,56 @@ export function PostEditor({ post, series }: PostEditorProps) {
     return status === "published" ? "Published" : "Saved as draft";
   });
 
-  function insertImage(url: string) {
+  function insert(text: string, cursorOffset?: number) {
     const textarea = contentRef.current;
     if (!textarea) return;
 
-    textarea.setRangeText(`\n![](${url})\n`, textarea.selectionStart, textarea.selectionEnd, "end");
+    const start = textarea.selectionStart;
+    textarea.setRangeText(text, start, textarea.selectionEnd, "end");
+    if (cursorOffset !== undefined) textarea.setSelectionRange(start + cursorOffset, start + cursorOffset);
     textarea.focus();
+  }
+
+  function selectedText() {
+    const textarea = contentRef.current;
+    return textarea ? textarea.value.slice(textarea.selectionStart, textarea.selectionEnd) : "";
+  }
+
+  // Block elements need a blank line before them to be parsed as Markdown blocks.
+  function blockPrefix() {
+    const textarea = contentRef.current;
+    if (!textarea || textarea.selectionStart === 0) return "";
+    const before = textarea.value.slice(0, textarea.selectionStart);
+    if (before.endsWith("\n\n")) return "";
+    return before.endsWith("\n") ? "\n" : "\n\n";
+  }
+
+  function insertHeading(level: 2 | 3) {
+    const prefix = `${blockPrefix()}${"#".repeat(level)} `;
+    const selected = selectedText();
+    const text = selected || "Heading";
+    insert(`${prefix}${text}\n\n`);
+    const textarea = contentRef.current;
+    if (!selected && textarea) {
+      // Select the placeholder so typing replaces it.
+      const start = textarea.selectionStart - text.length - 2;
+      textarea.setSelectionRange(start, start + text.length);
+    }
+  }
+
+  function insertInlineCode() {
+    const text = selectedText();
+    insert(`\`${text}\``, text ? undefined : 1);
+  }
+
+  function insertCodeBlock() {
+    const prefix = `${blockPrefix()}\`\`\``;
+    // Cursor lands right after the opening fence so the language (e.g. js, python) can be typed.
+    insert(`${prefix}\n${selectedText()}\n\`\`\`\n\n`, prefix.length);
+  }
+
+  function insertImage(url: string) {
+    insert(`${blockPrefix()}![](${url})\n\n`);
   }
 
   async function deletePost() {
@@ -124,10 +168,35 @@ export function PostEditor({ post, series }: PostEditorProps) {
             </option>
           ))}
         </select>
-        <div className='flex items-center gap-4'>
+        <span>{isPublished ? "Published" : "Draft"}</span>
+      </div>
+      <div
+        role='toolbar'
+        aria-label='Formatting'
+        className='sticky top-0 z-10 -mx-1 mt-4 flex flex-wrap items-center gap-1 bg-background/90 py-2 backdrop-blur'>
+        <ToolbarButton
+          label='Heading'
+          onClick={() => insertHeading(2)}>
+          <Heading2 className='size-4' />
+        </ToolbarButton>
+        <ToolbarButton
+          label='Subheading'
+          onClick={() => insertHeading(3)}>
+          <Heading3 className='size-4' />
+        </ToolbarButton>
+        <ToolbarButton
+          label='Inline code'
+          onClick={insertInlineCode}>
+          <Code className='size-4' />
+        </ToolbarButton>
+        <ToolbarButton
+          label='Code block'
+          onClick={insertCodeBlock}>
+          <SquareCode className='size-4' />
+        </ToolbarButton>
+        <span className='ml-1'>
           <UploadButton onUploaded={insertImage}>Image</UploadButton>
-          <span>{isPublished ? "Published" : "Draft"}</span>
-        </div>
+        </span>
       </div>
       <textarea
         ref={contentRef}
@@ -135,7 +204,7 @@ export function PostEditor({ post, series }: PostEditorProps) {
         defaultValue={post?.content}
         placeholder='Tell your story in Markdown...'
         aria-label='Content'
-        className='mt-8 min-h-[45vh] w-full resize-none bg-transparent text-[15.5px] leading-[1.75] outline-none field-sizing-content placeholder:text-muted-foreground/50'
+        className='mt-4 min-h-[45vh] w-full resize-none bg-transparent text-[15.5px] leading-[1.75] outline-none field-sizing-content placeholder:text-muted-foreground/50'
       />
       <div className='mt-8 flex flex-wrap items-center gap-3 border-t pt-6'>
         {post && (
@@ -166,5 +235,20 @@ export function PostEditor({ post, series }: PostEditorProps) {
         </div>
       </div>
     </form>
+  );
+}
+
+function ToolbarButton({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type='button'
+      title={label}
+      aria-label={label}
+      // Keep the textarea's selection while clicking.
+      onMouseDown={(event) => event.preventDefault()}
+      onClick={onClick}
+      className='grid size-8 place-items-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground'>
+      {children}
+    </button>
   );
 }
